@@ -50,6 +50,7 @@ export function PosDashboard() {
   const [query, setQuery] = useState("");
   const [gst, setGst] = useState(5);
   const [gstNumber, setGstNumber] = useState("");
+  const [discount, setDiscount] = useState("0");
   const [checkout, setCheckout] = useState(false);
   const [paid, setPaid] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "" });
@@ -139,8 +140,11 @@ export function PosDashboard() {
       ),
     [current],
   );
-  const gstAmount = Math.round((subtotal * gst) / 100);
-  const total = subtotal + gstAmount;
+  const discountPercentage = Math.min(100, Math.max(0, Number(discount) || 0));
+  const discountAmount = Math.round((subtotal * discountPercentage) / 100);
+  const taxableAmount = subtotal - discountAmount;
+  const gstAmount = Math.round((taxableAmount * gst) / 100);
+  const total = taxableAmount + gstAmount;
 
   function addItem(product: Product) {
     if (!current) return;
@@ -235,6 +239,7 @@ export function PosDashboard() {
         table_id: current.id,
         items: current.items,
         gst_percentage: gst,
+        discount_percentage: discountPercentage,
         customer_name: customer.name,
         customer_phone: customer.phone,
       }),
@@ -305,6 +310,7 @@ export function PosDashboard() {
       "",
       "━━━━━━━━━━━━━━━━━━",
       `*Subtotal:* ₹${subtotal}`,
+      ...(discountPercentage > 0 ? [`*Discount (${discountPercentage}%):* -₹${discountAmount}`] : []),
       gstLine,
       `*TOTAL: ₹${total}*`,
       "━━━━━━━━━━━━━━━━━━",
@@ -530,6 +536,7 @@ export function PosDashboard() {
                   <span>Subtotal</span>
                   <span>₹{subtotal}</span>
                 </div>
+                {discountPercentage > 0 && <div className="flex justify-between text-primary"><span>Discount ({discountPercentage}%)</span><span>-₹{discountAmount}</span></div>}
                 <div className="flex justify-between">
                   <span>GST ({gst}%)</span>
                   <span>₹{gstAmount}</span>
@@ -602,6 +609,7 @@ export function PosDashboard() {
                   </button>
                 </div>
                 <div className="mt-5 flex flex-col gap-3">
+                  <label className="flex flex-col gap-1 text-sm font-medium">Discount percentage<input value={discount} onChange={(event) => setDiscount(event.target.value)} type="number" min="0" max="100" step="0.01" placeholder="0" className="h-11 rounded-xl border border-input bg-background px-3" /></label>
                   <input
                     value={customer.name}
                     onChange={(event) =>
